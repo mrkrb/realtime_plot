@@ -25,6 +25,21 @@ namespace Ui {
 class Widget;
 }
 
+struct __attribute__((packed)) dataType{
+  float time;
+  int16_t data1;
+  float data2;
+  int16_t data3;
+  float data4;
+};
+
+union {
+    dataType data;
+    unsigned char data_byte[sizeof(dataType)];
+  } data_u;
+
+int MyCOBSdecode(QByteArray data_byte_encode, int packetlen);
+
 class Widget : public QWidget
 {
     Q_OBJECT

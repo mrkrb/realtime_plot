@@ -68,12 +68,39 @@ Widget::Widget(QWidget *parent) :
 
     addSubplotTab();
 
+    qDebug() << "sizeof(dataType) = " << sizeof(data_u.data);
+    qDebug() << "sizeof(float) = " << sizeof(float);
+    qDebug() << "sizeof(int16_t) = " << sizeof(int16_t);
+
 }
 
 Widget::~Widget()
 {
     sckDisconnect();
     delete ui;
+}
+///////////////////////////////////////////////////////////////////////////// COBS DECODE
+int MyCOBSdecode(QByteArray data_byte_encode, int packetlen) {
+//  size_t datalen_encode = data_byte_encode.length();
+  size_t read_index = 0;
+  size_t write_index = 0;
+  uint8_t code;
+  uint8_t i;
+  while(read_index < packetlen) {
+//    code = data_byte_encode[read_index];
+    code = data_byte_encode.at(read_index);
+    if(read_index + code > packetlen && code != 1) {
+      return 0;
+    }
+    read_index++;
+    for(i = 1; i < code; i++) {
+        data_u.data_byte[write_index++] = data_byte_encode.at(read_index++);
+    }
+    if(code != 0xFF && read_index != packetlen) {
+        data_u.data_byte[write_index++] = '\0';
+    }
+  }
+  return write_index;
 }
 ///////////////////////////////////////////////////////////////////////////// SOKET SLOTS
 void Widget::sckConnect() {
@@ -121,13 +148,25 @@ void Widget::sckBytesWritten(qint64 bytes) {
 void Widget::sckReadyRead() {
     const int old_scrollbar_value = ui->textBrowser_incomingData->verticalScrollBar()->value();
 
-    QString incoming = socket->readAll();
+//    QString incoming = socket->readAll();
+//    QString incoming = "sckReadyRead\n";
 
-    ui->textBrowser_incomingData->moveCursor(QTextCursor::End);
-    ui->textBrowser_incomingData->insertPlainText(incoming);
+    QByteArray intest = socket->readAll();
+    QList<QByteArray> intest_splitted = intest.split(0);
+    QListIterator<QByteArray> packet_it(intest_splitted);
+    while (packet_it.hasNext()) {
+        QByteArray packet = packet_it.next();
+        if(!packet.isEmpty()) {
+            MyCOBSdecode(packet, 17);
+//            QString data = "time = " + QString::number(data_u.data.time) + ",\tdata1 = " + QString::number(data_u.data.data1) + ",\tdata2 = " + QString::number(data_u.data.data2) + ",\tdata3 = " + QString::number(data_u.data.data3) + ",\tdata4 = " + QString::number(data_u.data.data4) + "\n";
+            QString data = QString::number(data_u.data.time) + "\t" + QString::number(data_u.data.data1) + "\t" + QString::number(data_u.data.data2) + "\t" + QString::number(data_u.data.data3) + "\t" + QString::number(data_u.data.data4) + "\n";
+            ui->textBrowser_incomingData->moveCursor(QTextCursor::End);
+            ui->textBrowser_incomingData->insertPlainText(data);
+        }
+    }
 
     if(ui->checkBox_enablePlot->isChecked()) {
-        plotData.append(incoming);
+//        plotData.append(incoming);
     }
 
     if(!ui->checkBox_autoscroll->isChecked()) {
