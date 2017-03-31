@@ -14,6 +14,7 @@
 #include <QScrollBar>
 #include <QTimer>
 #include <QStringList>
+#include <QtSerialPort>
 
 #include "subplottab.h"
 #include "lineform.h"
@@ -63,6 +64,8 @@ public:
     ~Widget();
 
 private:
+    QString mode;
+
     Ui::Widget *ui;
 
     QTcpSocket *socket;
@@ -91,6 +94,11 @@ private:
     int currentTabIdx;
     SubplotTab* currentTab;
 
+    ///SERIAL
+    QString serialportname;
+    QString serialbaud;
+    QSerialPort serialport;
+
 #ifdef TEST
     QTime timerTest;
 #endif
@@ -110,6 +118,8 @@ private slots:
     void skcStateChanged(QAbstractSocket::SocketState socketState);
     void sckError(QAbstractSocket::SocketError socketError);
 
+    void serialReadyRead();
+
     void on_lineEdit_cmdSend_returnPressed();
     void on_pushButton_saveIncomingData_clicked();
     void on_pushButton_plotSettings_clicked();
@@ -122,6 +132,14 @@ private slots:
 
     void linePropertiesChanged(linePropertiesT);
     void on_tabWidget_subplot_currentChanged(int index);
+
+    void on_comboBox_serial_available_currentIndexChanged(const QString &arg1);
+    void on_comboBox_serial_baud_currentIndexChanged(const QString &arg1);
+    void on_pushButton_serial_start_clicked();
+    void on_pushButton_serial_stop_clicked();
+    void on_tabWidget_2_currentChanged(int index);
+
+    void processIncomingData(QByteArray incoming);
 
 signals:
     void newDataAvailable(QVector<QVector<double>>const &);

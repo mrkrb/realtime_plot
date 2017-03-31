@@ -20,72 +20,208 @@
       <enum>Qt::Horizontal</enum>
      </property>
      <widget class="QWidget" name="layoutWidget">
-      <layout class="QVBoxLayout" name="verticalLayout_3">
+      <layout class="QVBoxLayout" name="verticalLayout_3" stretch="0,0">
        <item>
-        <layout class="QVBoxLayout" name="verticalLayout">
-         <property name="spacing">
+        <widget class="QTabWidget" name="tabWidget_2">
+         <property name="currentIndex">
           <number>0</number>
          </property>
-         <item>
-          <widget class="QLabel" name="label_hostname">
-           <property name="text">
-            <string>Hostname</string>
+         <widget class="QWidget" name="tab_tcpip">
+          <attribute name="title">
+           <string>TCP-IP</string>
+          </attribute>
+          <layout class="QVBoxLayout" name="verticalLayout_4">
+           <property name="spacing">
+            <number>0</number>
            </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLineEdit" name="lineEdit_hostname">
-           <property name="text">
-            <string>192.168.4.1</string>
+           <property name="leftMargin">
+            <number>0</number>
            </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_port">
-           <property name="text">
-            <string>Port</string>
+           <property name="topMargin">
+            <number>0</number>
            </property>
-          </widget>
-         </item>
-         <item>
-          <layout class="QHBoxLayout" name="horizontalLayout">
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
            <item>
-            <widget class="QLineEdit" name="lineEdit_port">
-             <property name="text">
-              <string>23</string>
+            <layout class="QVBoxLayout" name="verticalLayout">
+             <property name="spacing">
+              <number>0</number>
              </property>
-            </widget>
-           </item>
-           <item>
-            <spacer name="horizontalSpacer">
-             <property name="orientation">
-              <enum>Qt::Horizontal</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>150</width>
-               <height>20</height>
-              </size>
-             </property>
-            </spacer>
+             <item>
+              <widget class="QLabel" name="label_hostname">
+               <property name="text">
+                <string>Hostname</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="lineEdit_hostname">
+               <property name="text">
+                <string>192.168.4.1</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="label_port">
+               <property name="text">
+                <string>Port</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout">
+               <item>
+                <widget class="QLineEdit" name="lineEdit_port">
+                 <property name="text">
+                  <string>23</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <spacer name="horizontalSpacer">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>150</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <widget class="QPushButton" name="pushButton_connect">
+               <property name="text">
+                <string>Connect</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="pushButton_disconnect">
+               <property name="text">
+                <string>Disconnect</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
            </item>
           </layout>
-         </item>
-         <item>
-          <widget class="QPushButton" name="pushButton_connect">
-           <property name="text">
-            <string>Connect</string>
+          <zorder></zorder>
+          <zorder></zorder>
+         </widget>
+         <widget class="QWidget" name="tab_serial">
+          <attribute name="title">
+           <string>Serial</string>
+          </attribute>
+          <widget class="QComboBox" name="comboBox_serial_baud">
+           <property name="geometry">
+            <rect>
+             <x>40</x>
+             <y>72</y>
+             <width>121</width>
+             <height>30</height>
+            </rect>
            </property>
           </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="pushButton_disconnect">
+          <widget class="QLabel" name="label_serial_info">
+           <property name="geometry">
+            <rect>
+             <x>172</x>
+             <y>10</y>
+             <width>101</width>
+             <height>16</height>
+            </rect>
+           </property>
            <property name="text">
-            <string>Disconnect</string>
+            <string>Serial Port info</string>
            </property>
           </widget>
-         </item>
-        </layout>
+          <widget class="QLabel" name="label_serial_available">
+           <property name="geometry">
+            <rect>
+             <x>40</x>
+             <y>10</y>
+             <width>131</width>
+             <height>16</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Available serial ports</string>
+           </property>
+          </widget>
+          <widget class="QComboBox" name="comboBox_serial_available">
+           <property name="geometry">
+            <rect>
+             <x>40</x>
+             <y>28</y>
+             <width>121</width>
+             <height>30</height>
+            </rect>
+           </property>
+          </widget>
+          <widget class="QLabel" name="label_serila_baud">
+           <property name="geometry">
+            <rect>
+             <x>42</x>
+             <y>54</y>
+             <width>81</width>
+             <height>16</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Serial baud</string>
+           </property>
+          </widget>
+          <widget class="QTextBrowser" name="textBrowser_serial_info">
+           <property name="geometry">
+            <rect>
+             <x>167</x>
+             <y>30</y>
+             <width>131</width>
+             <height>111</height>
+            </rect>
+           </property>
+           <property name="font">
+            <font>
+             <pointsize>12</pointsize>
+            </font>
+           </property>
+          </widget>
+          <widget class="QPushButton" name="pushButton_serial_start">
+           <property name="geometry">
+            <rect>
+             <x>40</x>
+             <y>110</y>
+             <width>61</width>
+             <height>32</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Start</string>
+           </property>
+          </widget>
+          <widget class="QPushButton" name="pushButton_serial_stop">
+           <property name="geometry">
+            <rect>
+             <x>100</x>
+             <y>110</y>
+             <width>61</width>
+             <height>32</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Stop</string>
+           </property>
+          </widget>
+         </widget>
+        </widget>
        </item>
        <item>
         <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -100,7 +236,14 @@
           </widget>
          </item>
          <item>
-          <widget class="QListWidget" name="listWidget_cmdHistory"/>
+          <widget class="QListWidget" name="listWidget_cmdHistory">
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>300</height>
+            </size>
+           </property>
+          </widget>
          </item>
          <item>
           <widget class="QLabel" name="label_cmdHistory_cmdSend">
@@ -142,7 +285,7 @@
        <enum>QTabWidget::Rounded</enum>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <property name="elideMode">
        <enum>Qt::ElideRight</enum>

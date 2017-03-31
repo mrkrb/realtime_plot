@@ -7,6 +7,8 @@ Widget::Widget(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    mode = "socket";
+
     // SOCKET SETUP
     socket = new QTcpSocket(this);
 
@@ -73,6 +75,20 @@ Widget::Widget(QWidget *parent) :
     qDebug() << "sizeof(int16_t) = " << sizeof(int16_t);
 
     parsedData = QVector<QVector<double>>(numData);
+
+    ///////////////////////////////////////////////////////////////////////////////////////
+    /// SERIAL
+    foreach (const QSerialPortInfo &info, QSerialPortInfo::availablePorts()) {
+        ui->comboBox_serial_available->addItem(info.portName());
+    }
+
+    QStringList baudlist;
+    baudlist << "1200" << "2400" << "4800" << "9600" << "19200" << "38400" << "57600" << "115200";
+    ui->comboBox_serial_baud->addItems(baudlist);
+    ui->comboBox_serial_baud->setCurrentIndex(7);
+
+    // serial data available signal
+    connect(&serialport, SIGNAL(readyRead()), this, SLOT(serialReadyRead()));
 
 }
 
@@ -148,43 +164,42 @@ void Widget::sckBytesWritten(qint64 bytes) {
 }
 
 void Widget::sckReadyRead() {
-    const int old_scrollbar_value = ui->textBrowser_incomingData->verticalScrollBar()->value();
+//    const int old_scrollbar_value = ui->textBrowser_incomingData->verticalScrollBar()->value();
 
 
     QByteArray intest = socket->readAll();
-//    qDebug() << "intest = " << intest.toHex();
-    QList<QByteArray> intest_splitted = intest.split(0);
-    QListIterator<QByteArray> packet_it(intest_splitted);
-    while (packet_it.hasNext()) {
-        QByteArray packet = packet_it.next();
-//        qDebug() << "packet length = " << packet.length();
-        if(!packet.isEmpty() && packet.length() == sizeof(dataType)+1) {
-            MyCOBSdecode(packet, sizeof(dataType)+1);
-//            QString data = "time = " + QString::number(data_u.data.time) + ",\tdata1 = " + QString::number(data_u.data.data1) + ",\tdata2 = " + QString::number(data_u.data.data2) + ",\tdata3 = " + QString::number(data_u.data.data3) + ",\tdata4 = " + QString::number(data_u.data.data4) + "\n";
-//            QString data = QString::number(data_u.data.time) + "\t" + QString::number(data_u.data.data1) + "\t" + QString::number(data_u.data.data2) + "\t" + QString::number(data_u.data.data3) + "\t" + QString::number(data_u.data.data4) + "\n";
-            QString data = QString::number(data_u.data.time) + ",\t" + QString::number(data_u.data.data1) + ",\t" + QString::number(data_u.data.data2) + ",\t" + QString::number(data_u.data.data3) + ",\t" + QString::number(data_u.data.data4) + ",\t" + QString::number(data_u.data.data5) + ",\t" + QString::number(data_u.data.data6)+ ",\t" + QString::number(data_u.data.data7)+ ",\t" + QString::number(data_u.data.data8)+ ",\t" + QString::number(data_u.data.data9) + "\n";
-            ui->textBrowser_incomingData->moveCursor(QTextCursor::End);
-            ui->textBrowser_incomingData->insertPlainText(data);
-            parsedData[0].append(data_u.data.time);
-            parsedData[1].append(data_u.data.data1);
-            parsedData[2].append(data_u.data.data2);
-            parsedData[3].append(data_u.data.data3);
-            parsedData[4].append(data_u.data.data4);
-            parsedData[5].append(data_u.data.data5);
-            parsedData[6].append(data_u.data.data6);
-            parsedData[7].append(data_u.data.data7);
-            parsedData[8].append(data_u.data.data8);
-            parsedData[9].append(data_u.data.data9);
-        }
-    }
+    processIncomingData(intest);
 
-    if(ui->checkBox_enablePlot->isChecked()) {
-//        plotData.append(incoming);
-    }
 
-    if(!ui->checkBox_autoscroll->isChecked()) {
-        ui->textBrowser_incomingData->verticalScrollBar()->setValue(old_scrollbar_value);
-    }
+////    qDebug() << "intest = " << intest.toHex();
+//    QList<QByteArray> intest_splitted = intest.split(0);
+//    QListIterator<QByteArray> packet_it(intest_splitted);
+//    while (packet_it.hasNext()) {
+//        QByteArray packet = packet_it.next();
+////        qDebug() << "packet length = " << packet.length();
+//        if(!packet.isEmpty() && packet.length() == sizeof(dataType)+1) {
+//            MyCOBSdecode(packet, sizeof(dataType)+1);
+////            QString data = "time = " + QString::number(data_u.data.time) + ",\tdata1 = " + QString::number(data_u.data.data1) + ",\tdata2 = " + QString::number(data_u.data.data2) + ",\tdata3 = " + QString::number(data_u.data.data3) + ",\tdata4 = " + QString::number(data_u.data.data4) + "\n";
+////            QString data = QString::number(data_u.data.time) + "\t" + QString::number(data_u.data.data1) + "\t" + QString::number(data_u.data.data2) + "\t" + QString::number(data_u.data.data3) + "\t" + QString::number(data_u.data.data4) + "\n";
+//            QString data = QString::number(data_u.data.time) + ",\t" + QString::number(data_u.data.data1) + ",\t" + QString::number(data_u.data.data2) + ",\t" + QString::number(data_u.data.data3) + ",\t" + QString::number(data_u.data.data4) + ",\t" + QString::number(data_u.data.data5) + ",\t" + QString::number(data_u.data.data6)+ ",\t" + QString::number(data_u.data.data7)+ ",\t" + QString::number(data_u.data.data8)+ ",\t" + QString::number(data_u.data.data9) + "\n";
+//            ui->textBrowser_incomingData->moveCursor(QTextCursor::End);
+//            ui->textBrowser_incomingData->insertPlainText(data);
+//            parsedData[0].append(data_u.data.time);
+//            parsedData[1].append(data_u.data.data1);
+//            parsedData[2].append(data_u.data.data2);
+//            parsedData[3].append(data_u.data.data3);
+//            parsedData[4].append(data_u.data.data4);
+//            parsedData[5].append(data_u.data.data5);
+//            parsedData[6].append(data_u.data.data6);
+//            parsedData[7].append(data_u.data.data7);
+//            parsedData[8].append(data_u.data.data8);
+//            parsedData[9].append(data_u.data.data9);
+//        }
+//    }
+
+//    if(!ui->checkBox_autoscroll->isChecked()) {
+//        ui->textBrowser_incomingData->verticalScrollBar()->setValue(old_scrollbar_value);
+//    }
 }
 
 void Widget::sckSend(QString tosend) {
@@ -210,20 +225,40 @@ void Widget::sckError(QAbstractSocket::SocketError socketError) {
 void Widget::on_lineEdit_cmdSend_returnPressed()
 {
     ui->listWidget_cmdHistory->clearSelection();
-    if(socket->state() == QTcpSocket::ConnectedState) {
-        QString cmd = ui->lineEdit_cmdSend->text();
-        if(cmd != "") {
-            sckSend(cmd);
-            ui->listWidget_cmdHistory->addItem(cmd);
-            ui->listWidget_cmdHistory->scrollToBottom();
-            ui->lineEdit_cmdSend->clear();
+    if(mode == "socket") {
+        if(socket->state() == QTcpSocket::ConnectedState) {
+            QString cmd = ui->lineEdit_cmdSend->text();
+            if(cmd != "") {
+                sckSend(cmd);
+                ui->listWidget_cmdHistory->addItem(cmd);
+                ui->listWidget_cmdHistory->scrollToBottom();
+                ui->lineEdit_cmdSend->clear();
+            } else {
+                qDebug() << "you can not send empty cmd...";
+                QMessageBox::warning(this, tr("ESP8266 comunication tool"), tr("You can not send empty command."), QMessageBox::Ok);
+            }
         } else {
-            qDebug() << "you can not send empty cmd...";
-            QMessageBox::warning(this, tr("ESP8266 comunication tool"), tr("You can not send empty command."), QMessageBox::Ok);
+            qDebug() << "you are not connected...";
+            QMessageBox::warning(this, tr("comunication tool"), tr("You can not send command.\nYou are not connected to host."), QMessageBox::Ok);
         }
-    } else {
-        qDebug() << "you are not connected...";
-        QMessageBox::warning(this, tr("ESP8266 comunication tool"), tr("You can not send command.\nYou are not connected to host."), QMessageBox::Ok);
+    } else if(mode == "serial") {
+        if(serialport.isOpen()) {
+            QString cmd = ui->lineEdit_cmdSend->text();
+            if(cmd != "") {
+                const char* tosend = cmd.toStdString().c_str();
+                serialport.write(tosend);
+                ui->listWidget_cmdHistory->addItem(cmd);
+                ui->listWidget_cmdHistory->scrollToBottom();
+                ui->lineEdit_cmdSend->clear();
+            } else {
+                qDebug() << "you can not send empty cmd...";
+                QMessageBox::warning(this, tr("comunication tool"), tr("You can not send empty command."), QMessageBox::Ok);
+            }
+        } else {
+            qDebug() << "serial port is closed...";
+            QMessageBox::warning(this, tr("comunication tool"), tr("You can not send command.\nSerial port is not opened."), QMessageBox::Ok);
+        }
+
     }
 }
 
@@ -309,73 +344,6 @@ void Widget::plotUpdate() {
             parsedData[k].clear();
         }
     }
-    /*
-//    qDebug() << "update";
-
-    if(!plotData.isEmpty() && socket->state() == QTcpSocket::ConnectedState){
-
-        QStringList plotDataLines = plotData.split("\r\n");
-
-        foreach(const QString &line, plotDataLines){
-            if( line.startsWith(initChar) ) {
-                validData = true;
-                QStringList plotDataParsed = line.split(",");
-
-                if(isFirst) {
-                    numData = plotDataParsed.length();
-                    parsedData = QVector<QVector<double>>(numData);
-                    isFirst = false;
-                }
-
-                int i = 0;
-                foreach (QString data, plotDataParsed) {
-                    parsedData[i] << data.remove(0,1).toFloat();
-                    i++;
-                }
-            }
-        }
-
-
-
-
-        if(validData) {
-            // EMIT THE SIGNAL FOR NEW DATA
-            emit(newDataAvailable(parsedData));
-            ui->plot->replot();
-
-            // EMPTY THE DATA BUFFER
-            for(int k = 0; k<numData; k++) {
-                parsedData[k].clear();
-            }
-        }
-
-        plotData.clear();
-        validData = false;
-    }
-    */
-
-#ifdef TEST
-    if(isFirst) {
-        numData = 5;
-        parsedData = QVector<QVector<double>>(numData);
-        timerTest.start();
-        isFirst = false;
-    }
-    double time = timerTest.elapsed()/1000.0;
-    parsedData[0] << time;
-    parsedData[1] << qSin(time);
-    parsedData[2] << qCos(time);
-    parsedData[3] << qSin(2 * time);
-    parsedData[4] << qCos(2 * time);
-    // EMIT THE SIGNAL FOR NEW DATA
-    emit(newDataAvailable(parsedData));
-    ui->plot->replot();
-
-    // EMPTY THE DATA BUFFER
-    for(int k = 0; k<numData; k++) {
-        parsedData[k].clear();
-    }
-#endif
 }
 
 void Widget::on_horizontalSlider_fps_sliderMoved(int position) {
@@ -429,4 +397,111 @@ void Widget::on_tabWidget_subplot_currentChanged(int index)
     currentTabIdx = index;
     currentTab    = (SubplotTab*)ui->tabWidget_subplot->widget(index);
     qDebug() << "Current tab: " << index;
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+/// SERIAL
+
+void Widget::serialReadyRead() {
+    QByteArray incomingdata = serialport.readAll();
+    processIncomingData(incomingdata);
+}
+
+void Widget::on_comboBox_serial_available_currentIndexChanged(const QString &arg1)
+{
+    serialportname = arg1;
+    qDebug() << "serial port: " << serialportname;
+    QSerialPortInfo serialportinfo(serialportname);
+    QString serialinfos = QString("<html><b>Manufacturer:</b>\n%1\n<b>Description:</b>\n%2</html>").arg(serialportinfo.manufacturer(), serialportinfo.description());
+    ui->textBrowser_serial_info->setText(serialinfos);
+}
+
+void Widget::on_comboBox_serial_baud_currentIndexChanged(const QString &arg1)
+{
+    serialbaud = arg1;
+}
+
+void Widget::on_pushButton_serial_start_clicked()
+{
+    if(serialport.isOpen()) {
+        QMessageBox::warning(this, tr("comunication tool"), tr("Serial port was already open."), QMessageBox::Ok);
+        return;
+    }
+
+    QSerialPortInfo serialportinfo(serialportname);
+    if (serialportinfo.isBusy()) {
+        QMessageBox messageBox;
+        messageBox.critical(0,"Error","The selected serial port is busy");
+        messageBox.setFixedSize(500,200);
+        return;
+    }
+    if (serialportname.isEmpty()) {
+        QMessageBox messageBox;
+        messageBox.warning(0,"Warning","No serial port selected");
+        messageBox.setFixedSize(500,200);
+        return;
+    }
+    serialport.setPortName(serialportname);
+    serialport.open(QIODevice::ReadWrite);
+    serialport.setBaudRate( serialbaud.toInt() );
+    serialport.setDataBits(QSerialPort::Data8);
+    serialport.setParity(QSerialPort::NoParity);
+    serialport.setStopBits(QSerialPort::OneStop);
+    serialport.setFlowControl(QSerialPort::NoFlowControl);
+}
+
+void Widget::on_pushButton_serial_stop_clicked()
+{
+    if(serialport.isOpen()) {
+        serialport.close();
+    } else {
+        qDebug() << "serial port is closed...";
+        QMessageBox::warning(this, tr("comunication tool"), tr("Serial port was already closed."), QMessageBox::Ok);
+    }
+}
+
+void Widget::on_tabWidget_2_currentChanged(int index)
+{
+    if(index == 0) {
+        mode = "socket";
+    } else if(index == 1) {
+        mode = "serial";
+    }
+    qDebug() << "MODE = " << mode;
+}
+
+//
+
+void Widget::processIncomingData(QByteArray incoming) {
+    const int old_scrollbar_value = ui->textBrowser_incomingData->verticalScrollBar()->value();
+
+    //    qDebug() << "intest = " << intest.toHex();
+        QList<QByteArray> intest_splitted = incoming.split(0);
+        QListIterator<QByteArray> packet_it(intest_splitted);
+        while (packet_it.hasNext()) {
+            QByteArray packet = packet_it.next();
+    //        qDebug() << "packet length = " << packet.length();
+            if(!packet.isEmpty() && packet.length() == sizeof(dataType)+1) {
+                MyCOBSdecode(packet, sizeof(dataType)+1);
+    //            QString data = "time = " + QString::number(data_u.data.time) + ",\tdata1 = " + QString::number(data_u.data.data1) + ",\tdata2 = " + QString::number(data_u.data.data2) + ",\tdata3 = " + QString::number(data_u.data.data3) + ",\tdata4 = " + QString::number(data_u.data.data4) + "\n";
+    //            QString data = QString::number(data_u.data.time) + "\t" + QString::number(data_u.data.data1) + "\t" + QString::number(data_u.data.data2) + "\t" + QString::number(data_u.data.data3) + "\t" + QString::number(data_u.data.data4) + "\n";
+                QString data = QString::number(data_u.data.time) + ",\t" + QString::number(data_u.data.data1) + ",\t" + QString::number(data_u.data.data2) + ",\t" + QString::number(data_u.data.data3) + ",\t" + QString::number(data_u.data.data4) + ",\t" + QString::number(data_u.data.data5) + ",\t" + QString::number(data_u.data.data6)+ ",\t" + QString::number(data_u.data.data7)+ ",\t" + QString::number(data_u.data.data8)+ ",\t" + QString::number(data_u.data.data9) + "\n";
+                ui->textBrowser_incomingData->moveCursor(QTextCursor::End);
+                ui->textBrowser_incomingData->insertPlainText(data);
+                parsedData[0].append(data_u.data.time);
+                parsedData[1].append(data_u.data.data1);
+                parsedData[2].append(data_u.data.data2);
+                parsedData[3].append(data_u.data.data3);
+                parsedData[4].append(data_u.data.data4);
+                parsedData[5].append(data_u.data.data5);
+                parsedData[6].append(data_u.data.data6);
+                parsedData[7].append(data_u.data.data7);
+                parsedData[8].append(data_u.data.data8);
+                parsedData[9].append(data_u.data.data9);
+            }
+        }
+
+        if(!ui->checkBox_autoscroll->isChecked()) {
+            ui->textBrowser_incomingData->verticalScrollBar()->setValue(old_scrollbar_value);
+        }
 }
