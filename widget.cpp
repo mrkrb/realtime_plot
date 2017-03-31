@@ -55,7 +55,7 @@ Widget::Widget(QWidget *parent) :
     initChar = ui->lineEdit_initChar->text();
     isFirst = true;
     validData = false;
-    numData = 0;
+//    numData = 0;
 
     ui->dockWidget->setFloating(true);
     ui->dockWidget->hide();
@@ -71,6 +71,8 @@ Widget::Widget(QWidget *parent) :
     qDebug() << "sizeof(dataType) = " << sizeof(data_u.data);
     qDebug() << "sizeof(float) = " << sizeof(float);
     qDebug() << "sizeof(int16_t) = " << sizeof(int16_t);
+
+    parsedData = QVector<QVector<double>>(numData);
 
 }
 
@@ -148,20 +150,31 @@ void Widget::sckBytesWritten(qint64 bytes) {
 void Widget::sckReadyRead() {
     const int old_scrollbar_value = ui->textBrowser_incomingData->verticalScrollBar()->value();
 
-//    QString incoming = socket->readAll();
-//    QString incoming = "sckReadyRead\n";
 
     QByteArray intest = socket->readAll();
+//    qDebug() << "intest = " << intest.toHex();
     QList<QByteArray> intest_splitted = intest.split(0);
     QListIterator<QByteArray> packet_it(intest_splitted);
     while (packet_it.hasNext()) {
         QByteArray packet = packet_it.next();
-        if(!packet.isEmpty()) {
-            MyCOBSdecode(packet, 17);
+//        qDebug() << "packet length = " << packet.length();
+        if(!packet.isEmpty() && packet.length() == sizeof(dataType)+1) {
+            MyCOBSdecode(packet, sizeof(dataType)+1);
 //            QString data = "time = " + QString::number(data_u.data.time) + ",\tdata1 = " + QString::number(data_u.data.data1) + ",\tdata2 = " + QString::number(data_u.data.data2) + ",\tdata3 = " + QString::number(data_u.data.data3) + ",\tdata4 = " + QString::number(data_u.data.data4) + "\n";
-            QString data = QString::number(data_u.data.time) + "\t" + QString::number(data_u.data.data1) + "\t" + QString::number(data_u.data.data2) + "\t" + QString::number(data_u.data.data3) + "\t" + QString::number(data_u.data.data4) + "\n";
+//            QString data = QString::number(data_u.data.time) + "\t" + QString::number(data_u.data.data1) + "\t" + QString::number(data_u.data.data2) + "\t" + QString::number(data_u.data.data3) + "\t" + QString::number(data_u.data.data4) + "\n";
+            QString data = QString::number(data_u.data.time) + ",\t" + QString::number(data_u.data.data1) + ",\t" + QString::number(data_u.data.data2) + ",\t" + QString::number(data_u.data.data3) + ",\t" + QString::number(data_u.data.data4) + ",\t" + QString::number(data_u.data.data5) + ",\t" + QString::number(data_u.data.data6)+ ",\t" + QString::number(data_u.data.data7)+ ",\t" + QString::number(data_u.data.data8)+ ",\t" + QString::number(data_u.data.data9) + "\n";
             ui->textBrowser_incomingData->moveCursor(QTextCursor::End);
             ui->textBrowser_incomingData->insertPlainText(data);
+            parsedData[0].append(data_u.data.time);
+            parsedData[1].append(data_u.data.data1);
+            parsedData[2].append(data_u.data.data2);
+            parsedData[3].append(data_u.data.data3);
+            parsedData[4].append(data_u.data.data4);
+            parsedData[5].append(data_u.data.data5);
+            parsedData[6].append(data_u.data.data6);
+            parsedData[7].append(data_u.data.data7);
+            parsedData[8].append(data_u.data.data8);
+            parsedData[9].append(data_u.data.data9);
         }
     }
 
@@ -289,6 +302,14 @@ void Widget::on_checkBox_enablePlot_toggled(bool checked)
 }
 
 void Widget::plotUpdate() {
+    if(!parsedData[0].isEmpty()){
+        emit(newDataAvailable(parsedData));
+        ui->plot->replot();
+        for(int k = 0; k<numData; k++) {
+            parsedData[k].clear();
+        }
+    }
+    /*
 //    qDebug() << "update";
 
     if(!plotData.isEmpty() && socket->state() == QTcpSocket::ConnectedState){
@@ -331,6 +352,7 @@ void Widget::plotUpdate() {
         plotData.clear();
         validData = false;
     }
+    */
 
 #ifdef TEST
     if(isFirst) {

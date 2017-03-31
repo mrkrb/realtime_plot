@@ -25,13 +25,27 @@ namespace Ui {
 class Widget;
 }
 
+//struct __attribute__((packed)) dataType{
+//  float time;
+//  int16_t data1;
+//  float data2;
+//  int16_t data3;
+//  float data4;
+//};
+
 struct __attribute__((packed)) dataType{
   float time;
-  int16_t data1;
+  float data1;
   float data2;
-  int16_t data3;
+  float data3;
   float data4;
+  float data5;
+  float data6;
+  float data7;
+  float data8;
+  float data9;
 };
+
 
 union {
     dataType data;
@@ -69,7 +83,7 @@ private:
     QString plotData;
     bool isFirst;
     bool validData;
-    int numData;
+    int numData = 10; // COBS NUMBER OF FIELDS!!!
     QVector<QVector<double>> parsedData;
 
     void addSubplotTab();
