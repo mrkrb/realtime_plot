@@ -9,7 +9,7 @@ Widget::Widget(QWidget *parent) :
 
     mode = "socket";
 
-    // SOCKET SETUP
+    /// SOCKET SETUP
     socket = new QTcpSocket(this);
 
     connect(socket, SIGNAL(connected()), this, SLOT(sckConnected()));
@@ -19,16 +19,28 @@ Widget::Widget(QWidget *parent) :
     connect(socket, SIGNAL(stateChanged(QAbstractSocket::SocketState)), this, SLOT(skcStateChanged(QAbstractSocket::SocketState)));
     connect(socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(sckError(QAbstractSocket::SocketError)));
 
-    states_str    << "Unconnected" << "Host Lookup" << "Connecting" << "Connected" << "Bound" << "Closing" << "Listening";
+    states_str    << "unconnected" << "host lookup" << "connecting" << "connected" << "bound" << "closing" << "listening";
     states_colors << "red"         << "orange"      << "orange"     << "green"     << "green" << "orange"  << "orange";
 
-    // UI SIGNAL CONNECTION
+    /// SERIAL SETUP
+    foreach (const QSerialPortInfo &info, QSerialPortInfo::availablePorts()) {
+        ui->comboBox_serial_available->addItem(info.portName());
+    }
 
+    QStringList baudlist;
+    baudlist << "1200" << "2400" << "4800" << "9600" << "19200" << "38400" << "57600" << "115200";
+    ui->comboBox_serial_baud->addItems(baudlist);
+    ui->comboBox_serial_baud->setCurrentIndex(7);
+
+    // serial data available signal
+    connect(&serialport, SIGNAL(readyRead()), this, SLOT(serialReadyRead()));
+
+    /// UI SIGNAL CONNECTION
     connect(ui->pushButton_connect,    SIGNAL(clicked(bool)), this, SLOT(sckConnect()));
     connect(ui->pushButton_disconnect, SIGNAL(clicked(bool)), this, SLOT(sckDisconnect()));
     connect(ui->pushButton_cmdSend,    SIGNAL(clicked(bool)), this, SLOT(on_lineEdit_cmdSend_returnPressed()));
 
-    ui->label_status->setText("State: " + states_str[socket->state()]);
+    ui->label_status->setText("State: socket " + states_str[socket->state()]);
     ui->label_status->setStyleSheet("QLabel {color : " + states_colors[socket->state()] + "; }");
 
     QList<int> sizes;
@@ -38,10 +50,8 @@ Widget::Widget(QWidget *parent) :
     hist_len = 0;
     hist_idx = 0;
 
-
     ui->tabWidget->setCurrentIndex(0);
     connect(ui->tabWidget, SIGNAL(currentChanged(int)), this, SLOT(plotSelected(int)));
-
 
     int width  = 700;
     int height = 700;
@@ -50,14 +60,15 @@ Widget::Widget(QWidget *parent) :
 
     qApp->installEventFilter(this);
 
-    // PLOT SETUP
+    ui->tabWidget_2->setCurrentIndex(0);
+
+    /// PLOT SETUP
     timerPlot = new QTimer(this);
     connect(timerPlot, SIGNAL(timeout()), this, SLOT(plotUpdate()));
 
     initChar = ui->lineEdit_initChar->text();
     isFirst = true;
     validData = false;
-//    numData = 0;
 
     ui->dockWidget->setFloating(true);
     ui->dockWidget->hide();
@@ -71,25 +82,12 @@ Widget::Widget(QWidget *parent) :
     addSubplotTab();
 
     qDebug() << "sizeof(dataType) = " << sizeof(data_u.data);
+    qDebug() << "sizeof(int) = " << sizeof(int);
     qDebug() << "sizeof(float) = " << sizeof(float);
+    qDebug() << "sizeof(double) = " << sizeof(double);
     qDebug() << "sizeof(int16_t) = " << sizeof(int16_t);
 
     parsedData = QVector<QVector<double>>(numData);
-
-    ///////////////////////////////////////////////////////////////////////////////////////
-    /// SERIAL
-    foreach (const QSerialPortInfo &info, QSerialPortInfo::availablePorts()) {
-        ui->comboBox_serial_available->addItem(info.portName());
-    }
-
-    QStringList baudlist;
-    baudlist << "1200" << "2400" << "4800" << "9600" << "19200" << "38400" << "57600" << "115200";
-    ui->comboBox_serial_baud->addItems(baudlist);
-    ui->comboBox_serial_baud->setCurrentIndex(7);
-
-    // serial data available signal
-    connect(&serialport, SIGNAL(readyRead()), this, SLOT(serialReadyRead()));
-
 }
 
 Widget::~Widget()
@@ -164,42 +162,8 @@ void Widget::sckBytesWritten(qint64 bytes) {
 }
 
 void Widget::sckReadyRead() {
-//    const int old_scrollbar_value = ui->textBrowser_incomingData->verticalScrollBar()->value();
-
-
-    QByteArray intest = socket->readAll();
-    processIncomingData(intest);
-
-
-////    qDebug() << "intest = " << intest.toHex();
-//    QList<QByteArray> intest_splitted = intest.split(0);
-//    QListIterator<QByteArray> packet_it(intest_splitted);
-//    while (packet_it.hasNext()) {
-//        QByteArray packet = packet_it.next();
-////        qDebug() << "packet length = " << packet.length();
-//        if(!packet.isEmpty() && packet.length() == sizeof(dataType)+1) {
-//            MyCOBSdecode(packet, sizeof(dataType)+1);
-////            QString data = "time = " + QString::number(data_u.data.time) + ",\tdata1 = " + QString::number(data_u.data.data1) + ",\tdata2 = " + QString::number(data_u.data.data2) + ",\tdata3 = " + QString::number(data_u.data.data3) + ",\tdata4 = " + QString::number(data_u.data.data4) + "\n";
-////            QString data = QString::number(data_u.data.time) + "\t" + QString::number(data_u.data.data1) + "\t" + QString::number(data_u.data.data2) + "\t" + QString::number(data_u.data.data3) + "\t" + QString::number(data_u.data.data4) + "\n";
-//            QString data = QString::number(data_u.data.time) + ",\t" + QString::number(data_u.data.data1) + ",\t" + QString::number(data_u.data.data2) + ",\t" + QString::number(data_u.data.data3) + ",\t" + QString::number(data_u.data.data4) + ",\t" + QString::number(data_u.data.data5) + ",\t" + QString::number(data_u.data.data6)+ ",\t" + QString::number(data_u.data.data7)+ ",\t" + QString::number(data_u.data.data8)+ ",\t" + QString::number(data_u.data.data9) + "\n";
-//            ui->textBrowser_incomingData->moveCursor(QTextCursor::End);
-//            ui->textBrowser_incomingData->insertPlainText(data);
-//            parsedData[0].append(data_u.data.time);
-//            parsedData[1].append(data_u.data.data1);
-//            parsedData[2].append(data_u.data.data2);
-//            parsedData[3].append(data_u.data.data3);
-//            parsedData[4].append(data_u.data.data4);
-//            parsedData[5].append(data_u.data.data5);
-//            parsedData[6].append(data_u.data.data6);
-//            parsedData[7].append(data_u.data.data7);
-//            parsedData[8].append(data_u.data.data8);
-//            parsedData[9].append(data_u.data.data9);
-//        }
-//    }
-
-//    if(!ui->checkBox_autoscroll->isChecked()) {
-//        ui->textBrowser_incomingData->verticalScrollBar()->setValue(old_scrollbar_value);
-//    }
+    QByteArray incomingdata = socket->readAll();
+    processIncomingData(incomingdata);
 }
 
 void Widget::sckSend(QString tosend) {
@@ -399,7 +363,6 @@ void Widget::on_tabWidget_subplot_currentChanged(int index)
     qDebug() << "Current tab: " << index;
 }
 
-////////////////////////////////////////////////////////////////////////////////////
 /// SERIAL
 
 void Widget::serialReadyRead() {
@@ -448,12 +411,21 @@ void Widget::on_pushButton_serial_start_clicked()
     serialport.setParity(QSerialPort::NoParity);
     serialport.setStopBits(QSerialPort::OneStop);
     serialport.setFlowControl(QSerialPort::NoFlowControl);
+
+    QString serialportstate = serialport.isOpen()?"open":"closed";
+    QString color = serialport.isOpen()?"green":"red";
+    ui->label_status->setText("State: serial port " + serialportstate);
+    ui->label_status->setStyleSheet("QLabel {color : "+ color + "; }");
 }
 
 void Widget::on_pushButton_serial_stop_clicked()
 {
     if(serialport.isOpen()) {
         serialport.close();
+        QString serialportstate = serialport.isOpen()?"open":"closed";
+        QString color = serialport.isOpen()?"green":"red";
+        ui->label_status->setText("State: serial port " + serialportstate);
+        ui->label_status->setStyleSheet("QLabel {color : "+ color + "; }");
     } else {
         qDebug() << "serial port is closed...";
         QMessageBox::warning(this, tr("comunication tool"), tr("Serial port was already closed."), QMessageBox::Ok);
@@ -464,8 +436,14 @@ void Widget::on_tabWidget_2_currentChanged(int index)
 {
     if(index == 0) {
         mode = "socket";
+        ui->label_status->setText("State: socket " + states_str[socket->state()]);
+        ui->label_status->setStyleSheet("QLabel {color : " + states_colors[socket->state()] + "; }");
     } else if(index == 1) {
         mode = "serial";
+        QString serialportstate = serialport.isOpen()?"open":"closed";
+        QString color = serialport.isOpen()?"green":"red";
+        ui->label_status->setText("State: serial port " + serialportstate);
+        ui->label_status->setStyleSheet("QLabel {color : "+ color + "; }");
     }
     qDebug() << "MODE = " << mode;
 }
@@ -485,19 +463,21 @@ void Widget::processIncomingData(QByteArray incoming) {
                 MyCOBSdecode(packet, sizeof(dataType)+1);
     //            QString data = "time = " + QString::number(data_u.data.time) + ",\tdata1 = " + QString::number(data_u.data.data1) + ",\tdata2 = " + QString::number(data_u.data.data2) + ",\tdata3 = " + QString::number(data_u.data.data3) + ",\tdata4 = " + QString::number(data_u.data.data4) + "\n";
     //            QString data = QString::number(data_u.data.time) + "\t" + QString::number(data_u.data.data1) + "\t" + QString::number(data_u.data.data2) + "\t" + QString::number(data_u.data.data3) + "\t" + QString::number(data_u.data.data4) + "\n";
-                QString data = QString::number(data_u.data.time) + ",\t" + QString::number(data_u.data.data1) + ",\t" + QString::number(data_u.data.data2) + ",\t" + QString::number(data_u.data.data3) + ",\t" + QString::number(data_u.data.data4) + ",\t" + QString::number(data_u.data.data5) + ",\t" + QString::number(data_u.data.data6)+ ",\t" + QString::number(data_u.data.data7)+ ",\t" + QString::number(data_u.data.data8)+ ",\t" + QString::number(data_u.data.data9) + "\n";
+                QString data = QString::number(data_u.data.time) + ",\t" + QString::number(data_u.data.data1) + "\n";//+ ",\t" + QString::number(data_u.data.data2) + ",\t" + QString::number(data_u.data.data3) + ",\t" + QString::number(data_u.data.data4) + ",\t" + QString::number(data_u.data.data5) + ",\t" + QString::number(data_u.data.data6)+ ",\t" + QString::number(data_u.data.data7)+ ",\t" + QString::number(data_u.data.data8)+ ",\t" + QString::number(data_u.data.data9) + "\n";
                 ui->textBrowser_incomingData->moveCursor(QTextCursor::End);
                 ui->textBrowser_incomingData->insertPlainText(data);
+
+                // populate plot data
                 parsedData[0].append(data_u.data.time);
                 parsedData[1].append(data_u.data.data1);
-                parsedData[2].append(data_u.data.data2);
-                parsedData[3].append(data_u.data.data3);
-                parsedData[4].append(data_u.data.data4);
-                parsedData[5].append(data_u.data.data5);
-                parsedData[6].append(data_u.data.data6);
-                parsedData[7].append(data_u.data.data7);
-                parsedData[8].append(data_u.data.data8);
-                parsedData[9].append(data_u.data.data9);
+//                parsedData[2].append(data_u.data.data2);
+//                parsedData[3].append(data_u.data.data3);
+//                parsedData[4].append(data_u.data.data4);
+//                parsedData[5].append(data_u.data.data5);
+//                parsedData[6].append(data_u.data.data6);
+//                parsedData[7].append(data_u.data.data7);
+//                parsedData[8].append(data_u.data.data8);
+//                parsedData[9].append(data_u.data.data9);
             }
         }
 

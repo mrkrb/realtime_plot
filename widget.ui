@@ -23,10 +23,22 @@
       <layout class="QVBoxLayout" name="verticalLayout_3" stretch="0,0">
        <item>
         <widget class="QTabWidget" name="tabWidget_2">
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>170</height>
+          </size>
+         </property>
          <property name="currentIndex">
           <number>0</number>
          </property>
          <widget class="QWidget" name="tab_tcpip">
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>200</height>
+           </size>
+          </property>
           <attribute name="title">
            <string>TCP-IP</string>
           </attribute>
@@ -117,109 +129,112 @@
           <zorder></zorder>
          </widget>
          <widget class="QWidget" name="tab_serial">
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>200</height>
+           </size>
+          </property>
           <attribute name="title">
            <string>Serial</string>
           </attribute>
-          <widget class="QComboBox" name="comboBox_serial_baud">
-           <property name="geometry">
-            <rect>
-             <x>40</x>
-             <y>72</y>
-             <width>121</width>
-             <height>30</height>
-            </rect>
+          <layout class="QHBoxLayout" name="horizontalLayout_4">
+           <property name="leftMargin">
+            <number>0</number>
            </property>
-          </widget>
-          <widget class="QLabel" name="label_serial_info">
-           <property name="geometry">
-            <rect>
-             <x>172</x>
-             <y>10</y>
-             <width>101</width>
-             <height>16</height>
-            </rect>
+           <property name="topMargin">
+            <number>0</number>
            </property>
-           <property name="text">
-            <string>Serial Port info</string>
+           <property name="rightMargin">
+            <number>0</number>
            </property>
-          </widget>
-          <widget class="QLabel" name="label_serial_available">
-           <property name="geometry">
-            <rect>
-             <x>40</x>
-             <y>10</y>
-             <width>131</width>
-             <height>16</height>
-            </rect>
+           <property name="bottomMargin">
+            <number>0</number>
            </property>
-           <property name="text">
-            <string>Available serial ports</string>
-           </property>
-          </widget>
-          <widget class="QComboBox" name="comboBox_serial_available">
-           <property name="geometry">
-            <rect>
-             <x>40</x>
-             <y>28</y>
-             <width>121</width>
-             <height>30</height>
-            </rect>
-           </property>
-          </widget>
-          <widget class="QLabel" name="label_serila_baud">
-           <property name="geometry">
-            <rect>
-             <x>42</x>
-             <y>54</y>
-             <width>81</width>
-             <height>16</height>
-            </rect>
-           </property>
-           <property name="text">
-            <string>Serial baud</string>
-           </property>
-          </widget>
-          <widget class="QTextBrowser" name="textBrowser_serial_info">
-           <property name="geometry">
-            <rect>
-             <x>167</x>
-             <y>30</y>
-             <width>131</width>
-             <height>111</height>
-            </rect>
-           </property>
-           <property name="font">
-            <font>
-             <pointsize>12</pointsize>
-            </font>
-           </property>
-          </widget>
-          <widget class="QPushButton" name="pushButton_serial_start">
-           <property name="geometry">
-            <rect>
-             <x>40</x>
-             <y>110</y>
-             <width>61</width>
-             <height>32</height>
-            </rect>
-           </property>
-           <property name="text">
-            <string>Start</string>
-           </property>
-          </widget>
-          <widget class="QPushButton" name="pushButton_serial_stop">
-           <property name="geometry">
-            <rect>
-             <x>100</x>
-             <y>110</y>
-             <width>61</width>
-             <height>32</height>
-            </rect>
-           </property>
-           <property name="text">
-            <string>Stop</string>
-           </property>
-          </widget>
+           <item>
+            <layout class="QVBoxLayout" name="verticalLayout_5">
+             <item>
+              <widget class="QLabel" name="label_serial_available">
+               <property name="text">
+                <string>Available serial ports:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QComboBox" name="comboBox_serial_available"/>
+             </item>
+             <item>
+              <widget class="QLabel" name="label_serila_baud">
+               <property name="text">
+                <string>Serial baud:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QComboBox" name="comboBox_serial_baud"/>
+             </item>
+             <item>
+              <widget class="QPushButton" name="pushButton_serial_start">
+               <property name="text">
+                <string>Start</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="pushButton_serial_stop">
+               <property name="text">
+                <string>Stop</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QVBoxLayout" name="verticalLayout_6">
+             <item>
+              <widget class="QLabel" name="label_serial_info">
+               <property name="text">
+                <string>Serial port info:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QTextBrowser" name="textBrowser_serial_info">
+               <property name="minimumSize">
+                <size>
+                 <width>100</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>16777215</width>
+                 <height>100</height>
+                </size>
+               </property>
+               <property name="font">
+                <font>
+                 <pointsize>12</pointsize>
+                </font>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="verticalSpacer">
+               <property name="orientation">
+                <enum>Qt::Vertical</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>20</width>
+                 <height>40</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
+           </item>
+          </layout>
          </widget>
         </widget>
        </item>

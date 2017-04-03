@@ -34,17 +34,22 @@ class Widget;
 //  float data4;
 //};
 
+//struct __attribute__((packed)) dataType{
+//  float time;
+//  float data1;
+//  float data2;
+//  float data3;
+//  float data4;
+//  float data5;
+//  float data6;
+//  float data7;
+//  float data8;
+//  float data9;
+//};
+
 struct __attribute__((packed)) dataType{
-  float time;
-  float data1;
-  float data2;
-  float data3;
-  float data4;
-  float data5;
-  float data6;
-  float data7;
-  float data8;
-  float data9;
+  double time;
+  double data1;
 };
 
 
@@ -86,7 +91,7 @@ private:
     QString plotData;
     bool isFirst;
     bool validData;
-    int numData = 10; // COBS NUMBER OF FIELDS!!!
+    int numData = 2; // COBS NUMBER OF FIELDS!!!
     QVector<QVector<double>> parsedData;
 
     void addSubplotTab();
