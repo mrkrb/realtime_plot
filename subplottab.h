@@ -20,6 +20,10 @@ public:
     ~SubplotTab();
     int id();
 
+    void clearPlot();
+
+public slots:
+    void link_x_windows_check_changed(bool b);
 
 private slots:
     void on_spinBox_numberLines_valueChanged(int arg1);
@@ -34,6 +38,9 @@ private slots:
     void mouseWheel();
 
     void on_horizontalSlider_yWindow_valueChanged(int value);
+
+
+    void link_x_windows_value_changed(int  v);
 
 private:
     QWidget* mainWidget;

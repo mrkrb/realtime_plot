@@ -25,6 +25,8 @@ public:
     ~LineForm();
     const linePropertiesT & getLineProperties();
 
+    void clearPlot();
+
 private slots:
     void on_pushButton_color_clicked();
     void on_spinBox_xIndex_valueChanged(int arg1);
@@ -44,7 +46,8 @@ private:
     void defaultLineProperties();
     QCustomPlot* plot;
     QCPAxisRect* axesRect;
-    QCPGraph* graph;
+    //QCPGraph* graph;
+//    QCPGraph* curve;
     QCPCurve* curve;
     QCPGraph* point;
     QWidget* widget;

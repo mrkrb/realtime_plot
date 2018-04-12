@@ -28,7 +28,7 @@ Widget::Widget(QWidget *parent) :
     }
 
     QStringList baudlist;
-    baudlist << "1200" << "2400" << "4800" << "9600" << "19200" << "38400" << "57600" << "115200";
+    baudlist << "1200" << "2400" << "4800" << "9600" << "19200" << "38400" << "57600" << "115200" << "625000" << "921600";
     ui->comboBox_serial_baud->addItems(baudlist);
     ui->comboBox_serial_baud->setCurrentIndex(7);
 
@@ -66,9 +66,8 @@ Widget::Widget(QWidget *parent) :
     timerPlot = new QTimer(this);
     connect(timerPlot, SIGNAL(timeout()), this, SLOT(plotUpdate()));
 
-    initChar = ui->lineEdit_initChar->text();
-    isFirst = true;
-    validData = false;
+//    isFirst = true;
+//    validData = false;
 
     ui->dockWidget->setFloating(true);
     ui->dockWidget->hide();
@@ -83,11 +82,18 @@ Widget::Widget(QWidget *parent) :
 
     qDebug() << "sizeof(dataType) = " << sizeof(data_u.data);
     qDebug() << "sizeof(int) = " << sizeof(int);
+    qDebug() << "sizeof(unsigned int) = " << sizeof(unsigned int);
     qDebug() << "sizeof(float) = " << sizeof(float);
     qDebug() << "sizeof(double) = " << sizeof(double);
     qDebug() << "sizeof(int16_t) = " << sizeof(int16_t);
 
     parsedData = QVector<QVector<double>>(numData);
+
+    // LINK X AXES
+    ui->checkBox_xWindowLink->setChecked(true);
+    ui->horizontalSlider_xWindowLink->setValue(500);
+
+    last_packet_id = -1;
 }
 
 Widget::~Widget()
@@ -96,7 +102,7 @@ Widget::~Widget()
     delete ui;
 }
 ///////////////////////////////////////////////////////////////////////////// COBS DECODE
-int MyCOBSdecode(QByteArray data_byte_encode, int packetlen) {
+int MyCOBSdecode(QByteArray data_byte_encode, size_t packetlen) {
 //  size_t datalen_encode = data_byte_encode.length();
   size_t read_index = 0;
   size_t write_index = 0;
@@ -163,7 +169,9 @@ void Widget::sckBytesWritten(qint64 bytes) {
 
 void Widget::sckReadyRead() {
     QByteArray incomingdata = socket->readAll();
-    processIncomingData(incomingdata);
+//    processIncomingData(incomingdata);
+    incomingdata_buffered.append(incomingdata);
+    processIncomingData2();
 }
 
 void Widget::sckSend(QString tosend) {
@@ -251,7 +259,7 @@ bool Widget::eventFilter(QObject *obj, QEvent *event) {
 
 void Widget::on_pushButton_saveIncomingData_clicked()
 {
-    QString filename = QFileDialog::getSaveFileName( this, tr("Save Recieved Data"), QDir::rootPath(), tr("Text files (*.txt)")  );
+    QString filename = QFileDialog::getSaveFileName( this, tr("Save Recieved Data"), QDir::rootPath(), tr("CSV files (*.csv)")  );
     if (filename != "") {
         qDebug() << filename;
         QFile f( filename );
@@ -341,6 +349,9 @@ void Widget::linePropertiesChanged(linePropertiesT lineProp) {
 void Widget::addSubplotTab() {
     int tabNumber = ui->tabWidget_subplot->count() + 1;
     SubplotTab* newTab = new SubplotTab(this, tabNumber, ui->plot);
+    connect(ui->checkBox_xWindowLink, SIGNAL(toggled(bool)), newTab, SLOT(link_x_windows_check_changed(bool)));
+    connect(ui->horizontalSlider_xWindowLink, SIGNAL(valueChanged(int)), newTab, SLOT(link_x_windows_value_changed(int)));
+    newTab->link_x_windows_check_changed(ui->checkBox_xWindowLink->isChecked());
     ui->tabWidget_subplot->addTab(newTab, "Subplot " + QString::number(tabNumber));
     ui->tabWidget_subplot->setCurrentWidget(newTab);
 }
@@ -363,11 +374,28 @@ void Widget::on_tabWidget_subplot_currentChanged(int index)
     qDebug() << "Current tab: " << index;
 }
 
+void Widget::on_pushButton_clearPlots_clicked()
+{
+//    qDebug() << "Widget::on_pushButton_clearPlots_clicked()";
+    int count = ui->tabWidget_subplot->count();
+//    qDebug() << "count = " << count;
+    for(int i = 0; i < count; i++){
+        SubplotTab* toclear = (SubplotTab*)ui->tabWidget_subplot->widget(i);
+//        qDebug() << toclear;
+        toclear->clearPlot();
+    }
+    ui->plot->replot();
+}
+
 /// SERIAL
 
 void Widget::serialReadyRead() {
     QByteArray incomingdata = serialport.readAll();
-    processIncomingData(incomingdata);
+    qDebug() << "incomingdata.length() = " << incomingdata.length();
+    qDebug() << "incomingdata = " << incomingdata.toHex();
+    //    processIncomingData(incomingdata);
+    incomingdata_buffered.append(incomingdata);
+    processIncomingData2();
 }
 
 void Widget::on_comboBox_serial_available_currentIndexChanged(const QString &arg1)
@@ -453,35 +481,126 @@ void Widget::on_tabWidget_2_currentChanged(int index)
 void Widget::processIncomingData(QByteArray incoming) {
     const int old_scrollbar_value = ui->textBrowser_incomingData->verticalScrollBar()->value();
 
-    //    qDebug() << "intest = " << intest.toHex();
+        qDebug() << "incoming.length() = " << incoming.length();
+        qDebug() << "incoming = " << incoming.toHex();
         QList<QByteArray> intest_splitted = incoming.split(0);
+        qDebug() << "intest_splitted.length() = " << intest_splitted.length();
         QListIterator<QByteArray> packet_it(intest_splitted);
         while (packet_it.hasNext()) {
             QByteArray packet = packet_it.next();
-    //        qDebug() << "packet length = " << packet.length();
+//            qDebug() << "packet length = " << packet.length();
             if(!packet.isEmpty() && packet.length() == sizeof(dataType)+1) {
                 MyCOBSdecode(packet, sizeof(dataType)+1);
     //            QString data = "time = " + QString::number(data_u.data.time) + ",\tdata1 = " + QString::number(data_u.data.data1) + ",\tdata2 = " + QString::number(data_u.data.data2) + ",\tdata3 = " + QString::number(data_u.data.data3) + ",\tdata4 = " + QString::number(data_u.data.data4) + "\n";
     //            QString data = QString::number(data_u.data.time) + "\t" + QString::number(data_u.data.data1) + "\t" + QString::number(data_u.data.data2) + "\t" + QString::number(data_u.data.data3) + "\t" + QString::number(data_u.data.data4) + "\n";
-                QString data = QString::number(data_u.data.time) + ",\t" + QString::number(data_u.data.data1) + "\n";//+ ",\t" + QString::number(data_u.data.data2) + ",\t" + QString::number(data_u.data.data3) + ",\t" + QString::number(data_u.data.data4) + ",\t" + QString::number(data_u.data.data5) + ",\t" + QString::number(data_u.data.data6)+ ",\t" + QString::number(data_u.data.data7)+ ",\t" + QString::number(data_u.data.data8)+ ",\t" + QString::number(data_u.data.data9) + "\n";
+                QString data = QString::number(data_u.data.pck_n)  + ",\t" +
+                               QString::number(data_u.data.time)  + ",\t" +
+                               QString::number(data_u.data.data1) + ",\t" +
+                               QString::number(data_u.data.data2) + ",\t" +
+                               QString::number(data_u.data.data3) + ",\t" +
+                               QString::number(data_u.data.data4) + ",\t" +
+                               QString::number(data_u.data.data5) + ",\t" +
+                               QString::number(data_u.data.data6) + "\n"; // ",\t" +
+//                               QString::number(data_u.data.data7) + ",\t" +
+//                               QString::number(data_u.data.data8) + ",\t" +
+//                               QString::number(data_u.data.data9) + "\n";
                 ui->textBrowser_incomingData->moveCursor(QTextCursor::End);
                 ui->textBrowser_incomingData->insertPlainText(data);
 
                 // populate plot data
-                parsedData[0].append(data_u.data.time);
-                parsedData[1].append(data_u.data.data1);
-//                parsedData[2].append(data_u.data.data2);
-//                parsedData[3].append(data_u.data.data3);
-//                parsedData[4].append(data_u.data.data4);
-//                parsedData[5].append(data_u.data.data5);
-//                parsedData[6].append(data_u.data.data6);
+                parsedData[0].append(double(data_u.data.time));
+                parsedData[1].append(double(data_u.data.data1));
+                parsedData[2].append(double(data_u.data.data2));
+                parsedData[3].append(double(data_u.data.data3));
+                parsedData[4].append(double(data_u.data.data4));
+                parsedData[5].append(double(data_u.data.data5));
+                parsedData[6].append(double(data_u.data.data6));
 //                parsedData[7].append(data_u.data.data7);
 //                parsedData[8].append(data_u.data.data8);
 //                parsedData[9].append(data_u.data.data9);
+
+            } else {
+                qDebug() << "packet.length() = " << packet.length();
+                qDebug() << "packet =   " << packet.toHex();
             }
         }
 
         if(!ui->checkBox_autoscroll->isChecked()) {
             ui->textBrowser_incomingData->verticalScrollBar()->setValue(old_scrollbar_value);
         }
+}
+
+void Widget::processIncomingData2() {
+    const int old_scrollbar_value = ui->textBrowser_incomingData->verticalScrollBar()->value();
+
+//    qDebug() << "incoming_buf.length() before processing = " << incomingdata_buffered.length();
+//    qDebug() << "incoming_buf = " << incomingdata_buffered.toHex();
+    QList<QByteArray> incomingdata_buffered_splitted = incomingdata_buffered.split(0);
+    incomingdata_buffered_splitted.removeLast(); // the last is empty
+    //        qDebug() << "intest_splitted.length() = " << incomingdata_buffered_splitted.length();
+    //        qDebug() << "intest_splitted.at(last) = " << incomingdata_buffered_splitted.at(incomingdata_buffered_splitted.length()-1).toHex();
+    QListIterator<QByteArray> packet_it(incomingdata_buffered_splitted);
+    while (packet_it.hasNext()) {
+        QByteArray packet = packet_it.next();
+        if(packet.length() == sizeof(dataType)+1) {
+            incomingdata_buffered.remove(0, sizeof(dataType)+2);
+            MyCOBSdecode(packet, sizeof(dataType)+1);
+//            qDebug() << "packet processed";
+            QString data = QString::number(data_u.data.pck_n)  + ",\t" +
+                    QString::number(data_u.data.time)  + ",\t" +
+                    QString::number(data_u.data.data1) + ",\t" +
+                    QString::number(data_u.data.data2) + ",\t" +
+                    QString::number(data_u.data.data3) + ",\t" +
+                    QString::number(data_u.data.data4) + ",\t" +
+                    QString::number(data_u.data.data5) + ",\t" +
+                    QString::number(data_u.data.data6) + "\n"; // ",\t" +
+
+                    ui->textBrowser_incomingData->moveCursor(QTextCursor::End);
+                    ui->textBrowser_incomingData->insertPlainText(data);
+
+                    // populate plot data
+                    parsedData[0].append(double(data_u.data.time));
+                    parsedData[1].append(double(data_u.data.data1));
+                    parsedData[2].append(double(data_u.data.data2));
+                    parsedData[3].append(double(data_u.data.data3));
+                    parsedData[4].append(double(data_u.data.data4));
+                    parsedData[5].append(double(data_u.data.data5));
+                    parsedData[6].append(double(data_u.data.data6));
+
+//                    if(last_packet_id != -1){
+//                        if(data_u.data.pck_n - last_packet_id  - 1) qDebug() << data_u.data.pck_n - last_packet_id - 1 << " PACKET LOSS";
+//                    }
+                    last_packet_id = data_u.data.pck_n;
+        }
+    }
+//    if(incomingdata_buffered.length()) qDebug() << "incoming_buf.length() after processing = " << incomingdata_buffered.length();
+
+        if(!ui->checkBox_autoscroll->isChecked()) {
+            ui->textBrowser_incomingData->verticalScrollBar()->setValue(old_scrollbar_value);
+        }
+}
+
+
+void Widget::on_pushButton_clear_clicked()
+{
+    ui->textBrowser_incomingData->clear();
+    ui->plot->update();
+}
+
+void Widget::on_pushButton_refresh_serial_clicked()
+{
+    ui->comboBox_serial_available->clear();
+    foreach (const QSerialPortInfo &info, QSerialPortInfo::availablePorts()) {
+        ui->comboBox_serial_available->addItem(info.portName());
+    }
+}
+
+void Widget::on_checkBox_xWindowLink_toggled(bool checked)
+{
+    ui->horizontalSlider_xWindowLink->setEnabled(checked);
+}
+
+void Widget::on_horizontalSlider_xWindowLink_valueChanged(int value)
+{
+    ui->label_xWindowLink->setText(QString::number(value/100.0, 'f', 2) + "s");
 }

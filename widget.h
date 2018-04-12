@@ -22,6 +22,8 @@
 
 //#define TEST
 
+#define COBS_TYPE float // <- merda c'è anche definito in in lineform.h
+
 namespace Ui {
 class Widget;
 }
@@ -48,8 +50,14 @@ class Widget;
 //};
 
 struct __attribute__((packed)) dataType{
-  double time;
-  double data1;
+  unsigned int   pck_n;
+  float time;
+  float data1;
+  float data2;
+  float data3;
+  float data4;
+  float data5;
+  float data6;
 };
 
 
@@ -58,7 +66,7 @@ union {
     unsigned char data_byte[sizeof(dataType)];
   } data_u;
 
-int MyCOBSdecode(QByteArray data_byte_encode, int packetlen);
+int MyCOBSdecode(QByteArray data_byte_encode, size_t packetlen);
 
 class Widget : public QWidget
 {
@@ -87,12 +95,12 @@ private:
 
     QTimer* timerPlot;
 
-    QString initChar;
-    QString plotData;
-    bool isFirst;
-    bool validData;
-    int numData = 2; // COBS NUMBER OF FIELDS!!!
+//    QString plotData;
+//    bool isFirst;
+//    bool validData;
+    int numData = 7; //<------------------------------------------------------ COBS NUMBER OF FIELDS!!!
     QVector<QVector<double>> parsedData;
+    long int last_packet_id;
 
     void addSubplotTab();
     void removeSubplotTab();
@@ -103,6 +111,7 @@ private:
     QString serialportname;
     QString serialbaud;
     QSerialPort serialport;
+    QByteArray incomingdata_buffered;
 
 #ifdef TEST
     QTime timerTest;
@@ -145,6 +154,18 @@ private slots:
     void on_tabWidget_2_currentChanged(int index);
 
     void processIncomingData(QByteArray incoming);
+    void processIncomingData2();
+
+
+    void on_pushButton_clearPlots_clicked();
+
+    void on_pushButton_clear_clicked();
+
+    void on_pushButton_refresh_serial_clicked();
+
+    void on_checkBox_xWindowLink_toggled(bool checked);
+
+    void on_horizontalSlider_xWindowLink_valueChanged(int value);
 
 signals:
     void newDataAvailable(QVector<QVector<double>>const &);

@@ -55,6 +55,18 @@ void SubplotTab::removeLine() {
     delete toRemove;
 }
 
+void SubplotTab::clearPlot() {
+//    qDebug() << "SubplotTab::clearPlot()";
+    QList<LineForm*> toclear_list = this->findChildren<LineForm*>();
+//    qDebug() << toclear_list;
+
+    QListIterator<LineForm*> toclear_it(toclear_list);
+    while (toclear_it.hasNext()) {
+        LineForm* toclear = toclear_it.next();
+        toclear->clearPlot();
+    }
+}
+
 void SubplotTab::on_spinBox_numberLines_valueChanged(int arg1)
 {
     int nlines = countLines();
@@ -151,4 +163,17 @@ void SubplotTab::on_horizontalSlider_xWindow_valueChanged(int value)
 void SubplotTab::on_horizontalSlider_yWindow_valueChanged(int value)
 {
     ui->label_yWindow->setText(QString::number(value/100.0, 'f', 2) + "s");
+}
+
+void SubplotTab::link_x_windows_check_changed(bool b) {
+    for(int i = 0; i<ui->horizontalLayout_xWindow->count(); i++) {
+        QWidget* w = ui->horizontalLayout_xWindow->itemAt(i)->widget();
+        if(w) {
+            w->setEnabled(!b);
+        }
+    }
+}
+
+void SubplotTab::link_x_windows_value_changed(int  v) {
+    ui->horizontalSlider_xWindow->setValue(v);
 }

@@ -22,7 +22,9 @@ LineForm::LineForm(QWidget *parent, QWidget *mainWidget, int id, QCustomPlot* pl
 
     // CURVE
     curve = new QCPCurve(axesRect->axis(QCPAxis::atBottom), axesRect->axis(QCPAxis::atLeft));
+//    curve = new QCPGraph(axesRect->axis(QCPAxis::atBottom), axesRect->axis(QCPAxis::atLeft));
     curve->setPen(lineProperties.pen);
+//    curve->setLineStyle(QCPGraph::lsStepLeft);
     plot->addPlottable(curve);
 
     // POINT
@@ -106,6 +108,8 @@ LineForm::LineForm(QWidget *parent, QWidget *mainWidget, int id, QCustomPlot* pl
         ui->comboBox_pointShape->addItem(icon, "");
     }
     ui->comboBox_pointShape->setCurrentIndex(4);
+
+    xWindow = 5.0;
 }
 
 LineForm::~LineForm()
@@ -162,7 +166,7 @@ void LineForm::on_spinBox_yIndex_valueChanged(int arg1)
     lineProperties.yIndex = arg1;
 }
 
-void LineForm::processNewData(QVector<QVector<double> > const &data) {
+void LineForm::processNewData(const QVector<QVector<double> > &data) {
 //    qDebug() << "updateing line " << lineProperties.id;
 
     unsigned int numData    = data.length();
@@ -225,4 +229,10 @@ void LineForm::xWindowChanged(int value){
 
 void LineForm::yWindowChanged(int value){
     yWindow = value/100.0;
+}
+
+void LineForm::clearPlot() {
+//    qDebug() << "LineForm::clearPlot()";
+    curve->clearData();
+    point->clearData();
 }
